@@ -14,6 +14,8 @@ Al presionarse el botón **Fight!** el combate empieza, se va mostrando turno po
 
 Si se escribe un nombre erróneo, sale un mensaje diciendo **No existe ningún Pokémon llamado ...**
 
+El botón **Limpiar** deja todo como al principio, borrando lo anteriormente registrado.
+
 ## Cómo ejecutarlo
 
 Se necesita internet, porque los Pokémon se descargan de la PokeAPI.
@@ -73,6 +75,23 @@ daño = base × efectividad × crítico   (redondeado)
 - **La vida nunca baja de 0**, y el combate termina cuando uno de los dos llega a 0. Al empezar cada combate se recupera la vida de ambos, así que se puede hacer revancha.
 
 Un caso que tuve en cuenta: si los dos jugadores escogen el mismo Pokémon (por ejemplo pikachu contra pikachu), la ventana no sabría qué barra actualizar, porque los avisos del combate usan el nombre. Por eso, en ese caso, el combate los llama "pikachu (J1)" y "pikachu (J2)".
+
+## Capturas de pantalla
+
+### Ventana al iniciar
+![Ventana al iniciar](capturas/inicio.png)
+
+### Pokémon cargados
+![Pokémon cargados](capturas/cargados.png)
+
+### Combate en curso
+![Combate en curso](capturas/combate.png)
+
+### Fin del combate
+![Fin del combate](capturas/ganador.png)
+
+### Error: Pokémon no encontrado
+![Pokémon no encontrado](capturas/error.png)
 
 ### Realizado por: 
    Maria Alejandra Bernal 1913234-3743

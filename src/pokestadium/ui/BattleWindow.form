@@ -186,7 +186,7 @@
           </component>
         </children>
       </grid>
-      <grid id="b4tt1" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="5" vgap="5">
+      <grid id="b4tt1" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="10" vgap="5">
         <margin top="8" left="8" bottom="8" right="8"/>
         <constraints>
           <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -196,7 +196,7 @@
         <children>
           <component id="bf001" class="javax.swing.JButton" binding="fightButton">
             <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false">
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="4" fill="0" indent="0" use-parent-layout="false">
                 <preferred-size width="160" height="36"/>
               </grid>
             </constraints>
@@ -206,9 +206,19 @@
               <text value="Fight!"/>
             </properties>
           </component>
+          <component id="bc004" class="javax.swing.JButton" binding="clearButton">
+            <constraints>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                <preferred-size width="120" height="36"/>
+              </grid>
+            </constraints>
+            <properties>
+              <text value="Limpiar"/>
+            </properties>
+          </component>
           <scrollpane id="bs002">
             <constraints>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
+              <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
                 <preferred-size width="-1" height="220"/>
               </grid>
             </constraints>

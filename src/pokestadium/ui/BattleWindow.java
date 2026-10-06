@@ -45,6 +45,7 @@ public class BattleWindow implements BattleListener {
     private JProgressBar hpBar2;
 
     private JButton fightButton;
+    private JButton clearButton;
     private JTextArea logArea;
 
     // Lógica de la ventana
@@ -73,6 +74,7 @@ public class BattleWindow implements BattleListener {
         nameField2.addActionListener(e -> loadPokemon(side2, false));
 
         fightButton.addActionListener(e -> startBattle());
+        clearButton.addActionListener(e -> clearAll());
     }
 
     public JPanel getMainPanel() {
@@ -181,12 +183,22 @@ public class BattleWindow implements BattleListener {
     //  Combate
     // =====================================================================
 
-    // Fight! solo se puede pulsar si los dos Pokémon están cargados y no hay nada en curso.
+    /*
+     * Fight! solo se puede pulsar si los dos Pokémon están cargados y no hay nada en curso.
+     * Limpiar se puede pulsar siempre que no haya una carga ni un combate en curso.
+     */
     private void updateFightButton() {
-        boolean ready = side1.pokemon != null && side2.pokemon != null
-                && !side1.loading && !side2.loading
-                && !fighting;
-        fightButton.setEnabled(ready);
+        boolean idle = !side1.loading && !side2.loading && !fighting;
+        fightButton.setEnabled(idle && side1.pokemon != null && side2.pokemon != null);
+        clearButton.setEnabled(idle);
+    }
+
+    // Deja la ventana como al abrirla: sin Pokémon y con el log vacío.
+    private void clearAll() {
+        side1.clear();
+        side2.clear();
+        logArea.setText("");
+        updateFightButton();
     }
 
     // Arranca el combate en segundo plano.
@@ -195,6 +207,7 @@ public class BattleWindow implements BattleListener {
         side1.setButtonsEnabled(false);
         side2.setButtonsEnabled(false);
         fightButton.setEnabled(false);
+        clearButton.setEnabled(false);
         logArea.setText("");
 
         // "this" es el listener: Battle llamará a onTurn, onHpChanged y onBattleEnded de esta clase
@@ -355,6 +368,18 @@ public class BattleWindow implements BattleListener {
             statsLabel.setText("HP " + p.getMaxHp() + " | ATK " + p.getAttack()
                     + " | DEF " + p.getDefense() + " | SPD " + p.getSpeed());
             showHp(p.getCurrentHp());
+        }
+
+        // Quita el Pokémon de este lado y vuelve a los textos iniciales.
+        void clear() {
+            pokemon = null;
+            nameField.setText("");
+            spriteLabel.setIcon(null);
+            spriteLabel.setText("");
+            nameLabel.setText("Sin Pokémon");
+            typesLabel.setText("Tipos: -");
+            statsLabel.setText("HP - | ATK - | DEF - | SPD -");
+            showCurrentHp(); // sin Pokémon, la barra queda vacía con "Sin Pokémon"
         }
 
         // Vuelve a mostrar la barra como estaba (por ejemplo, si falló una carga).
