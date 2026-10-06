@@ -1,51 +1,20 @@
 package pokestadium;
 
-import pokestadium.api.PokeApiClient;
-import pokestadium.api.PokemonNotFoundException;
-import pokestadium.battle.Battle;
-import pokestadium.battle.BattleListener;
-import pokestadium.model.Pokemon;
+import pokestadium.ui.BattleWindow;
 
-import java.io.IOException;
+import javax.swing.*;
 
 public class Main {
     public static void main(String[] args) {
-
-        BattleListener consola = new BattleListener() {
-            @Override
-            public void onTurn(String attacker, String defender, int damage,
-                               boolean critical, double modifier) {
-                System.out.println(attacker + " ataca a " + defender
-                        + " y hace " + damage + " de daño"
-                        + (critical ? " ¡CRÍTICO!" : "")
-                        + " (x" + modifier + ")");
-            }
-
-            @Override
-            public void onHpChanged(String pokemon, int hpActual) {
-                System.out.println("   HP de " + pokemon + ": " + hpActual);
-            }
-
-            @Override
-            public void onBattleEnded(String winner) {
-                System.out.println("¡Ganó " + winner + "!");
-            }
-        };
-
-        PokeApiClient api = new PokeApiClient();
-
-        try {
-            Pokemon p1 = api.fetchByName("squirtle");
-            Pokemon p2 = api.fetchByName("charmander");
-            System.out.println("--- " + p1 + "\n--- " + p2 + "\n");
-
-            Battle battle = new Battle(p1, p2, consola, 500); // medio segundo entre turnos
-            battle.fight();
-
-        } catch (PokemonNotFoundException e) {
-            System.out.println("Error -> " + e.getMessage());
-        } catch (IOException | InterruptedException e) {
-            System.out.println("Error de red -> " + e.getMessage());
-        }
+        // Toda la interfaz de Swing debe crearse en el hilo de Swing (EDT),
+        // por eso se usa invokeLater en lugar de crear la ventana aquí directamente.
+        SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("Pokémon Stadium Lite");
+            frame.setContentPane(new BattleWindow().getMainPanel());
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.pack();                       // tamaño según el contenido del .form
+            frame.setLocationRelativeTo(null);  // centrada en la pantalla
+            frame.setVisible(true);
+        });
     }
 }
