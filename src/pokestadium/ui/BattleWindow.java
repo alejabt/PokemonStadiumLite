@@ -2,6 +2,8 @@ package pokestadium.ui;
 
 import pokestadium.api.PokeApiClient;
 import pokestadium.api.PokemonNotFoundException;
+import pokestadium.battle.Battle;
+import pokestadium.battle.BattleListener;
 import pokestadium.model.Pokemon;
 
 import javax.imageio.ImageIO;
@@ -15,8 +17,11 @@ import java.util.concurrent.ExecutionException;
 // Ventana principal del juego.
 // El diseño se hizo en BattleWindow.form, por eso los botones y etiquetas no se crean con "new".
 // Los Pokémon se cargan en segundo plano (SwingWorker) para que la ventana no se congele.
+// Battle le avisa a esta ventana lo que pasa en el combate (BattleListener) y aquí se muestra.
 
-public class BattleWindow {
+public class BattleWindow implements BattleListener {
+
+    private static final long TURN_DELAY_MS = 700; // pausa entre turnos del combate
 
     //Componentes del formulario creados por GUI Designer)
     private JPanel mainPanel;
@@ -47,6 +52,10 @@ public class BattleWindow {
     private final PlayerSide side1;
     private final PlayerSide side2;
 
+    private boolean fighting = false; // true mientras corre un combate
+    private String battleName1;       // nombre que usa Battle para el Jugador 1
+    private String battleName2;       // y para el Jugador 2
+
     public BattleWindow() {
         // Agrupamos los componentes de cada jugador para no repetir código
         side1 = new PlayerSide(nameField1, loadButton1, randomButton1,
@@ -62,6 +71,8 @@ public class BattleWindow {
         loadButton2.addActionListener(e -> loadPokemon(side2, false));
         randomButton2.addActionListener(e -> loadPokemon(side2, true));
         nameField2.addActionListener(e -> loadPokemon(side2, false));
+
+        fightButton.addActionListener(e -> startBattle());
     }
 
     public JPanel getMainPanel() {
@@ -85,10 +96,11 @@ public class BattleWindow {
             return;
         }
 
-        // Mientras carga, los botones de ESTE lado quedan deshabilitados
+        // Mientras carga, los botones de ESTE lado (y Fight!) quedan deshabilitados
         side.loading = true;
         side.setButtonsEnabled(false);
         side.showLoading();
+        updateFightButton();
 
         // SwingWorker: doInBackground() corre en otro hilo y done() en el hilo de Swing
         SwingWorker<Pokemon, Void> worker = new SwingWorker<Pokemon, Void>() {
@@ -120,6 +132,7 @@ public class BattleWindow {
                 } finally {
                     side.loading = false;
                     side.setButtonsEnabled(true);
+                    updateFightButton();
                 }
             }
         };
@@ -162,6 +175,122 @@ public class BattleWindow {
             JOptionPane.showMessageDialog(mainPanel, "Ocurrió un error inesperado:\n" + error,
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    // =====================================================================
+    //  Combate
+    // =====================================================================
+
+    // Fight! solo se puede pulsar si los dos Pokémon están cargados y no hay nada en curso.
+    private void updateFightButton() {
+        boolean ready = side1.pokemon != null && side2.pokemon != null
+                && !side1.loading && !side2.loading
+                && !fighting;
+        fightButton.setEnabled(ready);
+    }
+
+    // Arranca el combate en segundo plano.
+    private void startBattle() {
+        fighting = true;
+        side1.setButtonsEnabled(false);
+        side2.setButtonsEnabled(false);
+        fightButton.setEnabled(false);
+        logArea.setText("");
+
+        // "this" es el listener: Battle llamará a onTurn, onHpChanged y onBattleEnded de esta clase
+        Battle battle = new Battle(side1.pokemon, side2.pokemon, this, TURN_DELAY_MS);
+        battleName1 = battle.getName1();
+        battleName2 = battle.getName2();
+        appendLog("¡Comienza el combate! " + battleName1 + " vs " + battleName2);
+
+        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+
+            // Hilo aparte: fight() tarda varios segundos por las pausas entre turnos.
+            // Si corriera en el hilo de Swing, la ventana se congelaría hasta el final.
+            @Override
+            protected Void doInBackground() throws Exception {
+                battle.fight();
+                return null;
+            }
+
+            // El final normal del combate se muestra en onBattleEnded.
+            // Aquí solo se atiende el caso de que algo falle inesperadamente.
+            @Override
+            protected void done() {
+                try {
+                    get();
+                } catch (ExecutionException e) {
+                    appendLog("El combate se detuvo por un error: " + e.getCause());
+                    JOptionPane.showMessageDialog(mainPanel, "El combate se detuvo por un error:\n" + e.getCause(),
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                    finishBattle();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    finishBattle();
+                }
+            }
+        };
+        worker.execute();
+    }
+
+    // Deja la ventana lista para una revancha o para cambiar de Pokémon.
+    private void finishBattle() {
+        fighting = false;
+        side1.setButtonsEnabled(true);
+        side2.setButtonsEnabled(true);
+        updateFightButton();
+    }
+
+    // Agrega una línea al log y baja el scroll hasta el final.
+    private void appendLog(String line) {
+        logArea.append(line + "\n");
+        logArea.setCaretPosition(logArea.getDocument().getLength());
+    }
+
+    // ----- Eventos de BattleListener -----
+    // Battle llama a estos métodos desde el hilo del SwingWorker, NO desde el hilo de Swing.
+    // Swing solo se puede tocar desde su propio hilo, así que cada método envuelve su
+    // trabajo en SwingUtilities.invokeLater: "ejecuta esto en el hilo de Swing apenas puedas".
+
+    @Override
+    public void onTurn(String attacker, String defender, int damage,
+                       boolean critical, double modifier) {
+        SwingUtilities.invokeLater(() -> {
+            String line = attacker + " ataca a " + defender + " y hace " + damage + " de daño.";
+            if (critical) {
+                line += " ¡Golpe crítico!";
+            }
+            if (modifier > 1.0) {
+                line += " ¡Es súper efectivo! (x" + modifier + ")";
+            } else if (modifier < 1.0) {
+                line += " No es muy efectivo... (x" + modifier + ")";
+            }
+            appendLog(line);
+        });
+    }
+
+    @Override
+    public void onHpChanged(String pokemon, int hpActual) {
+        SwingUtilities.invokeLater(() -> {
+            // Battle avisa con el nombre; con él sabemos de qué lado es
+            PlayerSide side = pokemon.equals(battleName1) ? side1 : side2;
+            side.showHp(hpActual);
+            appendLog("    HP de " + pokemon + ": " + hpActual + " / " + side.pokemon.getMaxHp());
+        });
+    }
+
+    @Override
+    public void onBattleEnded(String winner) {
+        SwingUtilities.invokeLater(() -> {
+            String player = winner.equals(battleName1) ? "Jugador 1" : "Jugador 2";
+            String message = "¡" + winner + " gana el combate! (" + player + ")";
+            appendLog("");
+            appendLog(message);
+
+            finishBattle(); // se habilitan los botones para la revancha
+            JOptionPane.showMessageDialog(mainPanel, message,
+                    "Fin del combate", JOptionPane.INFORMATION_MESSAGE);
+        });
     }
 
     private static String capitalize(String text) {
