@@ -1,26 +1,32 @@
 package pokestadium;
 
-import org.json.JSONObject;
+import pokestadium.api.PokeApiClient;
+import pokestadium.api.PokemonNotFoundException;
 import pokestadium.model.Pokemon;
 
-import java.util.List;
+import java.io.IOException;
 
 public class Main {
     public static void main(String[] args) {
+        PokeApiClient api = new PokeApiClient();
 
-        // Prueba 1: la librería JSON funciona
-        JSONObject json = new JSONObject("{\"name\": \"pikachu\", \"id\": 25}");
-        System.out.println("JSON OK: " + json.getString("name") + " tiene id " + json.getInt("id"));
+        try {
+            // Prueba 1: por nombre, con mayúscula a propósito
+            Pokemon pikachu = api.fetchByName("Pikachu");
+            System.out.println("Por nombre: " + pikachu);
+            System.out.println("Sprite: " + pikachu.getSpriteUrl());
 
-        // Prueba 2: la clase Pokemon funciona
-        Pokemon p = new Pokemon(25, "pikachu", List.of("electric"),
-                35, 55, 40, 90, "url");
-        System.out.println(p);
+            // Prueba 2: aleatorio
+            Pokemon random = api.fetchRandom();
+            System.out.println("Aleatorio: " + random);
 
-        p.receiveDamage(20);   // le quitamos 20 de vida
-        System.out.println(p);
+            // Prueba 3: uno que no existe
+            api.fetchByName("noexiste123");
 
-        p.receiveDamage(100);  // le quitamos más de lo que tiene
-        System.out.println(p + " -> fainted: " + p.isFainted());
+        } catch (PokemonNotFoundException e) {
+            System.out.println("Error controlado -> " + e.getMessage());
+        } catch (IOException | InterruptedException e) {
+            System.out.println("Error de red -> " + e.getMessage());
+        }
     }
 }
