@@ -1,32 +1,35 @@
 package pokestadium;
 
-import pokestadium.api.PokeApiClient;
-import pokestadium.api.PokemonNotFoundException;
-import pokestadium.model.Pokemon;
-
-import java.io.IOException;
+import pokestadium.battle.BattleListener;
 
 public class Main {
     public static void main(String[] args) {
-        PokeApiClient api = new PokeApiClient();
 
-        try {
-            // Prueba 1: por nombre, con mayúscula a propósito
-            Pokemon pikachu = api.fetchByName("Pikachu");
-            System.out.println("Por nombre: " + pikachu);
-            System.out.println("Sprite: " + pikachu.getSpriteUrl());
+        // Un "oyente" que muestra los avisos en consola
+        BattleListener consola = new BattleListener() {
+            @Override
+            public void onTurn(String attacker, String defender, int damage,
+                               boolean critical, double modifier) {
+                System.out.println(attacker + " ataca a " + defender
+                        + " y hace " + damage + " de daño"
+                        + (critical ? " ¡CRÍTICO!" : "")
+                        + " (x" + modifier + ")");
+            }
 
-            // Prueba 2: aleatorio
-            Pokemon random = api.fetchRandom();
-            System.out.println("Aleatorio: " + random);
+            @Override
+            public void onHpChanged(String pokemon, int hpActual) {
+                System.out.println("   HP de " + pokemon + ": " + hpActual);
+            }
 
-            // Prueba 3: uno que no existe
-            api.fetchByName("noexiste123");
+            @Override
+            public void onBattleEnded(String winner) {
+                System.out.println("¡Ganó " + winner + "!");
+            }
+        };
 
-        } catch (PokemonNotFoundException e) {
-            System.out.println("Error controlado -> " + e.getMessage());
-        } catch (IOException | InterruptedException e) {
-            System.out.println("Error de red -> " + e.getMessage());
-        }
+        // Simulamos a mano lo que Battle hará solo en el Paso 4
+        consola.onTurn("squirtle", "charmander", 15, true, 1.3);
+        consola.onHpChanged("charmander", 24);
+        consola.onBattleEnded("squirtle");
     }
 }
